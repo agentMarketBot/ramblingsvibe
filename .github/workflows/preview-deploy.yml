@@ -1,0 +1,245 @@
+name: Deploy Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number for preview deployment'
+        required: true
+        type: string
+      channel_id:
+        description: 'Firebase hosting channel ID'
+        required: true
+        type: string
+      github_repo:
+        description: 'The repository where the PR was opened.'
+        required: true
+        type: string
+      head_repo:
+        description: 'The repository of the head commit.'
+        required: true
+        type: string
+      head_ref:
+        description: 'The ref of the head commit.'
+        required: true
+        type: string
+      gh_pat:
+        description: 'GitHub PAT for commenting on PRs'
+        required: true
+        type: string
+      room_id:
+        description: 'Room ID for updating implementation records'
+        required: false
+        type: string
+
+jobs:
+  deploy_preview:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.head_repo }}
+          ref: ${{ inputs.head_ref }}
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Determine build configuration
+        run: |
+          # All projects are assumed to be Vite projects that build to 'dist' folder
+          BUILD_DIR="dist"
+          echo "🏗️ Using 'dist' directory for Vite project builds"
+          
+          # Set environment variable for subsequent steps
+          echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
+          echo "✅ Build directory set to: $BUILD_DIR"
+
+      - name: Install dependencies
+        run: |
+          echo "Installing dependencies for Vite project..."
+          if [ -f "package-lock.json" ]; then
+            echo "Lock file found, using npm ci"
+            npm ci
+          else
+            echo "Using npm install"
+            npm install
+          fi
+
+      - name: Create firebase.json if not exists
+        run: |
+          if [ ! -f "firebase.json" ]; then
+            echo "Creating firebase.json for hosting configuration..."
+            echo "Using dist directory for Vite project"
+            
+            cat > firebase.json << EOF
+          {
+            "hosting": {
+              "public": "dist",
+              "ignore": [
+                "firebase.json",
+                "**/.*",
+                "**/node_modules/**"
+              ],
+              "rewrites": [
+                {
+                  "source": "**",
+                  "destination": "/index.html"
+                }
+              ]
+            }
+          }
+          EOF
+            echo "firebase.json created successfully with public directory: dist"
+          else
+            echo "firebase.json already exists"
+          fi
+
+      - name: Build project
+        run: |
+          echo "🏗️ Building Vite project to dist directory"
+          
+          # Ensure dist directory exists
+          mkdir -p dist
+          
+          # Run the build command
+          echo "📦 Running npm run build..."
+          if npm run build; then
+            echo "✅ Build completed successfully"
+            
+            # Check if build output is in dist directory
+            if [ "$(ls -A dist 2>/dev/null)" ]; then
+              echo "✅ Build directory contains files"
+              echo "📁 Build output in dist:"
+              ls -la dist/
+            else
+              echo "❌ Build directory is empty!"
+              exit 1
+            fi
+          else
+            echo "❌ Build failed!"
+            exit 1
+          fi
+          
+          echo "✅ Vite build ready for deployment"
+
+      - name: Deploy to Firebase Hosting Channel
+        id: firebase_deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.VIBETOGETHER_FIREBASE_SA }}
+          channelId: ${{ inputs.channel_id }}
+          projectId: vibetogether-app
+
+      - name: Install firebase-admin for GitHub script
+        run: npm install firebase-admin
+
+      - name: Store Preview URL in Firebase Storage
+        uses: actions/github-script@v7
+        env:
+          VIBETOGETHER_FIREBASE_SA: ${{ secrets.VIBETOGETHER_FIREBASE_SA }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const admin = require('firebase-admin');
+            const original_repo = "${{ inputs.github_repo }}".split('/');
+            const pr_number = parseInt("${{ inputs.pr_number }}");
+            const channel_id = "${{ inputs.channel_id }}";
+            
+            // Try to get preview URL from Firebase deployment output
+            let preview_url = "${{ steps.firebase_deploy.outputs.details_url }}";
+            
+            if (!preview_url) {
+              // Fallback to using the main URL output
+              preview_url = "${{ steps.firebase_deploy.outputs.url }}";
+            }
+            
+            if (!preview_url) {
+              // Final fallback: construct URL manually
+              const project_id = 'vibetogether-app';
+              preview_url = `https://${project_id}--${channel_id}-${Math.random().toString(36).substr(2, 8)}.web.app`;
+              console.log('Using constructed preview URL as fallback:', preview_url);
+            }
+            
+            console.log('Preview URL:', preview_url);
+            
+            // Log the preview URL information
+            console.log('='.repeat(60));
+            console.log('🚀 PREVIEW DEPLOYMENT SUCCESSFUL');
+            console.log('='.repeat(60));
+            console.log(`📄 Repository: ${original_repo.join('/')}`);
+            console.log(`🔧 PR Number: #${pr_number}`);
+            console.log(`🏷️  Channel ID: ${channel_id}`);
+            console.log(`🌐 Preview URL: ${preview_url}`);
+            console.log(`⏰ Deployed At: ${new Date().toISOString()}`);
+            console.log('='.repeat(60));
+            
+            // Set the preview URL as a step output for potential use by other steps
+            console.log(`::set-output name=preview_url::${preview_url}`);
+            
+            // Update the implementation record in Firestore with the preview URL
+            const roomId = '${{ inputs.room_id }}';
+            if (roomId && roomId.trim()) {
+              try {
+                const admin = require('firebase-admin');
+                
+                // Initialize Firebase Admin SDK if not already initialized
+                if (!admin.apps.length) {
+                  console.log('🔧 Initializing Firebase Admin SDK...');
+                  
+                  // Parse the service account from environment variable
+                  const serviceAccountString = process.env.VIBETOGETHER_FIREBASE_SA;
+                  if (!serviceAccountString) {
+                    throw new Error('VIBETOGETHER_FIREBASE_SA environment variable is not set');
+                  }
+                  
+                  const serviceAccount = JSON.parse(serviceAccountString);
+                  
+                  // Validate required fields
+                  if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+                    throw new Error('Service account is missing required fields');
+                  }
+                  
+                  admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount)
+                  });
+                  
+                  console.log('✅ Firebase Admin SDK initialized successfully');
+                }
+                
+                const firestore = admin.firestore();
+                
+                // Find implementations in the specified room that match this PR
+                const implementationsRef = firestore.collection('rooms').doc(roomId).collection('implementations');
+                  const querySnapshot = await implementationsRef.where('prUrl', '==', `https://github.com/${original_repo.join('/')}/pull/${pr_number}`).get();
+                  
+                  if (!querySnapshot.empty) {
+                    // Update each matching implementation with the preview URL
+                    const batch = firestore.batch();
+                    querySnapshot.docs.forEach(doc => {
+                      batch.update(doc.ref, {
+                        previewChannelUrl: preview_url,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                      });
+                    });
+                    
+                    await batch.commit();
+                    console.log(`✅ Updated ${querySnapshot.size} implementations with preview URL in room ${roomId}`);
+                  } else {
+                    console.log(`⚠️ No implementations found for PR ${pr_number} in room ${roomId}`);
+                  }
+                
+              } catch (firestoreError) {
+                console.log(`⚠️ Could not update Firestore with preview URL: ${firestoreError.message}`);
+                // Don't fail the workflow for this
+              }
+            } else {
+              console.log('⚠️ Room ID not provided, skipping Firestore update');
+            }
+            
+            console.log('✅ Preview deployment completed successfully!');
