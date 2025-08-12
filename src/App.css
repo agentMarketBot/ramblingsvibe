@@ -30,6 +30,80 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Error Container */
+.error-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 2rem;
+  background: #fef2f2;
+}
+
+.error-content {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #fecaca;
+}
+
+.error-content h2 {
+  color: #dc2626;
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+}
+
+.error-content p {
+  color: #374151;
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.error-instructions {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.error-instructions h3 {
+  color: #1e293b;
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+.error-instructions ol {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.error-instructions li {
+  margin: 0.5rem 0;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.error-instructions code {
+  background: #e2e8f0;
+  color: #1e293b;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+}
+
+.error-instructions a {
+  color: #6366f1;
+  text-decoration: none;
+}
+
+.error-instructions a:hover {
+  text-decoration: underline;
+}
+
 /* Sidebar */
 .sidebar {
   width: 280px;

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { MessageSquare, Send, Link as LinkIcon, ExternalLink } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 
-const PostItem = ({ post, user, channelType }) => {
+const PostItem = ({ post, user, channelType, supabase }) => {
   const [showReplies, setShowReplies] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [loading, setLoading] = useState(false);

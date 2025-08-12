@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Image, Link, Plus, MessageSquare, Hash, Users } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import PostItem from './PostItem';
 import clsx from 'clsx';
 
-const ChatInterface = ({ channel, user }) => {
+const ChatInterface = ({ channel, user, supabase }) => {
   const [posts, setPosts] = useState([]);
   const [newPostContent, setNewPostContent] = useState('');
   const [contentType, setContentType] = useState('text');
@@ -175,6 +174,7 @@ const ChatInterface = ({ channel, user }) => {
               post={post}
               user={user}
               channelType={channel.type}
+              supabase={supabase}
             />
           ))}
           <div ref={messagesEndRef} />

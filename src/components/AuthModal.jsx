@@ -1,13 +1,26 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { MessageSquare, Users, Hash } from 'lucide-react';
 
-const AuthModal = () => {
+const AuthModal = ({ supabase }) => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [displayName, setDisplayName] = useState('');
+
+  if (!supabase) {
+    return (
+      <div className="auth-modal">
+        <div className="auth-container">
+          <div className="auth-header">
+            <MessageSquare size={32} />
+            <h1>Configuration Error</h1>
+            <p>Supabase client not available. Please check your configuration.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

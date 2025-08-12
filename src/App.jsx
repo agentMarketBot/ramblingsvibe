@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from './lib/supabase';
 import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
 import AuthModal from './components/AuthModal';
@@ -11,31 +10,56 @@ function App() {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [teams, setTeams] = useState([]);
   const [channels, setChannels] = useState([]);
+  const [supabaseError, setSupabaseError] = useState(null);
+  const [supabase, setSupabase] = useState(null);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+    // Initialize Supabase with error handling
+    const initSupabase = async () => {
+      try {
+        const { supabase: supabaseClient } = await import('./lib/supabase');
+        setSupabase(supabaseClient);
+        
+        // Get initial session
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        setUser(session?.user ?? null);
+        setLoading(false);
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+          async (event, session) => {
+            setUser(session?.user ?? null);
+            if (session?.user) {
+              loadUserData(session.user, supabaseClient);
+            }
+          }
+        );
+
+        return subscription;
+      } catch (error) {
+        console.error('Failed to initialize Supabase:', error);
+        setSupabaseError(error.message);
+        setLoading(false);
+        return null;
+      }
+    };
+
+    let subscription = null;
+    initSupabase().then(sub => {
+      subscription = sub;
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          loadUserData(session.user);
-        }
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
       }
-    );
-
-    return () => subscription.unsubscribe();
+    };
   }, []);
 
-  const loadUserData = async (user) => {
+  const loadUserData = async (user, supabaseClient) => {
     try {
       // Load teams and channels for the user
-      const { data: teamData } = await supabase
+      const { data: teamData } = await supabaseClient
         .from('team_members')
         .select(`
           team_id,
@@ -54,7 +78,7 @@ function App() {
         // Load channels for all teams
         const teamIds = userTeams.map(t => t.id);
         if (teamIds.length > 0) {
-          const { data: channelData } = await supabase
+          const { data: channelData } = await supabaseClient
             .from('channels')
             .select(`
               *,
@@ -74,6 +98,26 @@ function App() {
     }
   };
 
+  if (supabaseError) {
+    return (
+      <div className="error-container">
+        <div className="error-content">
+          <h2>Configuration Error</h2>
+          <p>{supabaseError}</p>
+          <div className="error-instructions">
+            <h3>To fix this issue:</h3>
+            <ol>
+              <li>Copy <code>.env.example</code> to <code>.env</code></li>
+              <li>Add your Supabase project URL and anon key to <code>.env</code></li>
+              <li>Get your credentials from <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer">Supabase Dashboard</a></li>
+              <li>Restart the development server</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -84,7 +128,7 @@ function App() {
   }
 
   if (!user) {
-    return <AuthModal />;
+    return <AuthModal supabase={supabase} />;
   }
 
   return (
@@ -94,10 +138,12 @@ function App() {
         selectedChannel={selectedChannel}
         onChannelSelect={setSelectedChannel}
         user={user}
+        supabase={supabase}
       />
       <ChatInterface
         channel={selectedChannel}
         user={user}
+        supabase={supabase}
       />
     </div>
   );

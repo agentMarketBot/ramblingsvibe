@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Hash, Volume, VolumeX, Settings, Users } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 
-const Sidebar = ({ channels, selectedChannel, onChannelSelect, user }) => {
+const Sidebar = ({ channels, selectedChannel, onChannelSelect, user, supabase }) => {
   const [userPreferences, setUserPreferences] = useState({});
 
   // Group channels by type
