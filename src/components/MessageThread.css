@@ -1,0 +1,265 @@
+.message-thread {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.message-thread:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.main-message {
+  padding: 16px 20px;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.message-author {
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+}
+
+.message-time {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.message-type-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.message-content {
+  margin-bottom: 12px;
+}
+
+.message-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #1f2937;
+}
+
+.message-link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link-preview {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 13px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.link-preview:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.message-idea {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.idea-icon {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.message-photo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photo-placeholder {
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.replies-toggle,
+.reply-button {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.replies-toggle:hover,
+.reply-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.replies-list {
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reply-message {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 3px solid #e5e7eb;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.reply-author {
+  font-weight: 500;
+  font-size: 13px;
+  color: #374151;
+}
+
+.reply-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.reply-content {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #4b5563;
+}
+
+.reply-form {
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  padding: 16px 20px;
+}
+
+.reply-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  margin-bottom: 12px;
+  background: #ffffff;
+}
+
+.reply-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancel-button,
+.send-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.cancel-button:hover {
+  background: #f9fafb;
+}
+
+.send-button {
+  background: #3b82f6;
+  border: 1px solid #3b82f6;
+  color: white;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .main-message {
+    padding: 12px 16px;
+  }
+  
+  .replies-list {
+    padding: 12px 16px;
+  }
+  
+  .reply-form {
+    padding: 12px 16px;
+  }
+  
+  .message-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .message-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
